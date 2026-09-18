@@ -1,0 +1,33 @@
+{
+  "name": "adscrawl",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for AdsCrawl: rendered HTML and Markdown, screenshots, structured extraction, remote CDP sessions, and cloud browsers.",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/esm/index.d.ts", "default": "./dist/esm/index.js" },
+      "require": { "types": "./dist/cjs/index.d.ts", "default": "./dist/cjs/index.js" }
+    }
+  },
+  "files": ["dist", "README.md", "README.zh-CN.md", "LICENSE"],
+  "sideEffects": false,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "check": "npm run typecheck && npm test",
+    "test:package": "node scripts/test-package.mjs",
+    "prepack": "npm run build"
+  },
+  "repository": { "type": "git", "url": "git+https://github.com/AdsCrawl/adscrawl-js.git" },
+  "bugs": { "url": "https://github.com/AdsCrawl/adscrawl-js/issues" },
+  "homepage": "https://www.adscrawl.net/?utm_source=npm&utm_medium=sdk&utm_campaign=adscrawl-js",
+  "license": "MIT",
+  "keywords": ["adscrawl", "web-scraping", "browser", "markdown", "screenshot", "playwright", "puppeteer", "cdp", "typescript", "ai", "extraction"],
+  "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/" },
+  "devDependencies": { "typescript": "~5.9.3" }
+}
