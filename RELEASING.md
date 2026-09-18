@@ -1,37 +1,48 @@
 # Publishing adscrawl
 
-Target repository: `AdsCrawl/adscrawl-js`. Target npm package: `adscrawl`.
+Repository: `AdsCrawl/adscrawl-js`. Public npm package: `adscrawl`.
 
-## First release
+## First release through GitHub Actions
 
-1. Create a public GitHub repository named `adscrawl-js` under `AdsCrawl`, without generated files. Push this repository's `main` branch. If you change the owner/name, update `package.json` and the npm trusted-publisher configuration together.
-2. Run `npm ci`, `npm run check`, and `npm pack --dry-run`. The package includes compiled ESM/CommonJS, declarations, README files, the SVG logo, and the license.
-3. Sign in to the npm account that should own the package: `npm login`, then verify with `npm whoami`. Complete npm's authentication/2FA prompts yourself; never paste credentials into source files or chat.
-4. Confirm `npm view adscrawl version` returns E404. If another package has appeared, choose a new name before publishing.
-5. Publish `0.1.0` from the repository root: `npm publish --access public`. The `prepack` script builds both module formats.
-6. Verify `npm view adscrawl version` returns `0.1.0`, then install `adscrawl` in a clean Node.js project and check ESM, CommonJS, and TypeScript imports.
+The **Publish to npm** workflow supports both matching `vX.Y.Z` tags and a manual **Run workflow** from `main`. It checks the release ref, runs the SDK tests and package consumer checks, builds ESM/CommonJS and declarations, then publishes with provenance. Ordinary branch pushes only run CI.
 
-Publishing makes the version publicly installable. The first release uses your npm login. The workflow below is for later releases after trusted publishing is configured.
+Since `adscrawl` does not exist on npm yet, bootstrap the first release with a temporary granular token:
 
-## Later releases: npm trusted publishing
+1. Sign in to the npm account that should own `adscrawl` and complete email verification and npm's required authentication setup.
+2. In npm **Access Tokens → Generate New Token**, create a short-lived granular token. Enable **Bypass two-factor authentication**, and set **Packages and scopes → Permissions** to **Read and write (publish and stage)**. For the new, unscoped package, select **All Packages**; the package cannot be selected individually before it exists. Organization permissions are not required.
+3. In [GitHub repository Actions secrets](https://github.com/AdsCrawl/adscrawl-js/settings/secrets/actions), choose **New repository secret**, name it `NPM_TOKEN`, and paste the token as its value. Never paste it into code, issues, or chat.
+4. Open [Publish to npm](https://github.com/AdsCrawl/adscrawl-js/actions/workflows/publish.yml), select **Run workflow**, choose `main`, then run it. This publishes the version in `package.json`, currently `0.1.0`.
+5. Check the workflow is green and `npm view adscrawl version` returns `0.1.0`. A published version cannot be overwritten; bump the version before the next release.
+6. Configure Trusted Publisher below, then delete the GitHub `NPM_TOKEN` secret and revoke the temporary npm token.
 
-In npm's package settings, add a GitHub Actions trusted publisher:
+See [npm's granular token instructions](https://docs.npmjs.com/creating-and-viewing-access-tokens/). The token is available only to the publish step, not dependency installation or tests. Publishing makes the version publicly installable.
 
-- Organization or user: `AdsCrawl`
-- Repository: `adscrawl-js`
-- Workflow filename: `publish.yml`
-- Allow direct `npm publish` for this publisher if the settings offer action restrictions.
+Alternatively, bootstrap locally with `npm login`, `npm run check`, `npm run test:package`, and `npm publish --access public`, then configure Trusted Publisher. Complete interactive login and 2FA yourself.
 
-See [npm's official instructions](https://docs.npmjs.com/trusted-publishers/). The workflow uses a GitHub-hosted runner with Node.js 24, a current bundled npm, and `id-token: write`; it needs no npm token secret. Trusted publishing requires npm 11.5.1+ and Node.js 22.14.0+.
+## Later releases: npm Trusted Publisher
 
-Update the package version and changelog, then create and push the matching tag:
+Once the package exists, open its npm **Settings → Trusted Publisher**, choose **GitHub Actions**, and enter:
+
+| Field | Value |
+| --- | --- |
+| Organization or user | `AdsCrawl` |
+| Repository | `adscrawl-js` |
+| Workflow filename | `publish.yml` |
+| Environment name | Leave empty |
+| Allowed actions | Enable direct `npm publish` |
+
+Direct publishing must be enabled: new publisher connections otherwise permit staged publishing only. See [npm's official Trusted Publisher instructions](https://docs.npmjs.com/trusted-publishers/).
+
+The workflow uses a GitHub-hosted runner, Node.js 24, npm 11.5.1+, and `id-token: write`. After removing `NPM_TOKEN`, npm uses OIDC credentials supplied by GitHub Actions. Release builds do not use dependency caches.
+
+Update the changelog and package version, then push the matching tag:
 
 ```bash
 npm version patch
 git push origin main --follow-tags
 ```
 
-`.github/workflows/publish.yml` runs checks, verifies that `vX.Y.Z` matches `package.json`, and publishes with provenance. Configure the trusted publisher before pushing a release tag. Ordinary branch pushes only run CI; they do not publish.
+For example, this advances `0.1.0` to `0.1.1`, creates `v0.1.1`, and starts automatic publishing when the tag reaches GitHub. You can also use **Run workflow** on `main` after updating and pushing `package.json`. Tag names must exactly match the package version, and manual publishing from unrelated branches is rejected. Only publish versions ready for users; npm's default distribution tag is `latest`.
 
 ## Contract verification
 
