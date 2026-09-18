@@ -20,6 +20,8 @@ npm install adscrawl
 
 [Create an account](https://app.adscrawl.net/register/?utm_source=npm&utm_medium=sdk&utm_campaign=adscrawl-js) and create an API key in the dashboard. Set `ADSCRAWL_API_KEY` in your server environment, then:
 
+Each example below includes its own imports and client initialization. Run examples as ES modules or in your TypeScript project; the CommonJS example uses `require()`.
+
 ```ts
 import AdsCrawl from 'adscrawl';
 
@@ -37,15 +39,32 @@ CommonJS:
 
 ```js
 const { AdsCrawl } = require('adscrawl');
+
 const client = new AdsCrawl();
+
+async function main() {
+  const markdown = await client.markdown({
+    url: 'https://www.adscrawl.net',
+    waitUntil: 'domcontentloaded',
+  });
+  console.log(markdown);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
 ```
 
 ## Rendered content and screenshots
 
 ```ts
 import { writeFile } from 'node:fs/promises';
+import AdsCrawl from 'adscrawl';
 
+const client = new AdsCrawl();
 const html = await client.html({ url: 'https://www.adscrawl.net' });
+console.log(html);
 const article = await client.article({ url: 'https://www.adscrawl.net' });
 console.log(article.title, article.textContent);
 
@@ -63,12 +82,16 @@ await writeFile('page.png', png);
 Pass `selector` to extract an element or capture its screenshot. Page operations also accept `locale`, `timezoneId`, `geolocation`, `cookies`, `fingerprint`, and User-Agent settings. Use a custom `proxy` **or** managed `countryCode`, such as `US` or `GLOBAL`; they are mutually exclusive.
 
 ```ts
+import AdsCrawl from 'adscrawl';
+
+const client = new AdsCrawl();
 const markdown = await client.markdown({
   url: 'https://www.adscrawl.net',
   countryCode: 'US',
   userAgentMode: 'random',
   userAgentOs: 'windows',
 });
+console.log(markdown);
 ```
 
 ## Structured extraction
@@ -76,7 +99,11 @@ const markdown = await client.markdown({
 List available templates and their parameters:
 
 ```ts
+import AdsCrawl from 'adscrawl';
+
+const client = new AdsCrawl();
 const { templates } = await client.spa.templates();
+console.log(templates);
 
 const result = await client.spa.extract({
   template: 'google-trends-explore',
@@ -88,6 +115,9 @@ console.log(result.data);
 For your own page, specify DOM or network fields. A generic describes the expected output; it does not validate your custom data at runtime. Always check `missingFields`.
 
 ```ts
+import AdsCrawl from 'adscrawl';
+
+const client = new AdsCrawl();
 const result = await client.spa.extract<{ title: string }>({
   url: 'https://www.adscrawl.net',
   fields: {
@@ -95,8 +125,10 @@ const result = await client.spa.extract<{ title: string }>({
   },
 });
 console.log(result.data.title);
+console.log(result.missingFields);
 
 const inspection = await client.spa.inspect({ url: 'https://www.adscrawl.net' });
+console.log(inspection.candidates);
 ```
 
 Use `actions` for clicks, input, scrolling, and waits, and `waitFor` for a visible selector or text. See the [API reference](https://www.adscrawl.net/docs/browser-tasks/) for template-specific requirements.
@@ -106,12 +138,14 @@ Use `actions` for clicks, input, scrolling, and waits, and `waitFor` for a visib
 Install your preferred automation library separately:
 
 ```bash
-npm install playwright-core
+npm install adscrawl playwright-core
 ```
 
 ```ts
 import { chromium } from 'playwright-core';
+import AdsCrawl from 'adscrawl';
 
+const client = new AdsCrawl();
 const session = await client.cdp.create({
   idleTimeoutMs: 600_000,
   maxSessionMs: 3_600_000,
@@ -131,17 +165,29 @@ try {
 
 The creation response contains `sessionId`, `expiresAt`, and `cdpBaseUrl`. It does **not** contain a WebSocket URL. For Puppeteer, use discovery:
 
+```bash
+npm install adscrawl puppeteer-core
+```
+
 ```ts
 import puppeteer from 'puppeteer-core';
+import AdsCrawl from 'adscrawl';
 
+const client = new AdsCrawl();
 const session = await client.cdp.create();
 try {
   const version = await client.cdp.getVersion(session);
   const browser = await puppeteer.connect({
     browserWSEndpoint: version.webSocketDebuggerUrl,
   });
-  // Use the browser here.
-  await browser.disconnect();
+  try {
+    const pages = await browser.pages();
+    const page = pages[0] ?? await browser.newPage();
+    await page.goto('https://www.adscrawl.net');
+    console.log(await page.title());
+  } finally {
+    browser.disconnect();
+  }
 } finally {
   await client.cdp.close(session.sessionId);
 }
@@ -153,19 +199,56 @@ try {
 
 Cloud browser profiles retain their configuration after stop. API-key starts require an explicit, top-level custom proxy on **every** start, even when a proxy was saved in the profile.
 
+Set `ADSCRAWL_PROXY_SERVER` to your HTTP or SOCKS5 proxy URL with an explicit port. If authentication is needed, also set `ADSCRAWL_PROXY_USERNAME` and `ADSCRAWL_PROXY_PASSWORD`.
+
 ```ts
+import { setTimeout as delay } from 'node:timers/promises';
+import AdsCrawl, {
+  AdsCrawlAPIError,
+  AdsCrawlConnectionError,
+  AdsCrawlTimeoutError,
+} from 'adscrawl';
+
+const client = new AdsCrawl();
+const server = process.env.ADSCRAWL_PROXY_SERVER;
+if (!server) throw new Error('Set ADSCRAWL_PROXY_SERVER to your proxy URL.');
+const username = process.env.ADSCRAWL_PROXY_USERNAME;
+const password = process.env.ADSCRAWL_PROXY_PASSWORD;
+if (Boolean(username) !== Boolean(password)) {
+  throw new Error('Set both proxy username and password, or neither.');
+}
+const proxy = username && password ? { server, username, password } : { server };
+
+async function stopAndWait(id: string) {
+  const end = Date.now() + 120_000;
+  while (Date.now() < end) {
+    try {
+      const stopped = await client.cloudBrowsers.stop(id, {
+        timeoutMs: Math.max(1, Math.min(10_000, end - Date.now())),
+      });
+      if (stopped.runtime.status === 'stopped') return;
+    } catch (error) {
+      const retryable = error instanceof AdsCrawlTimeoutError
+        || error instanceof AdsCrawlConnectionError
+        || (error instanceof AdsCrawlAPIError
+          && (error.code === 'CDP_SESSION_STARTING' || error.status >= 500));
+      if (!retryable) throw error;
+    }
+    const remaining = end - Date.now();
+    if (remaining > 0) await delay(Math.min(2000, remaining));
+  }
+  throw new Error(`Stop unconfirmed for ${id}; inspect the profile and retry stop.`);
+}
+
 const { id } = await client.cloudBrowsers.create({ remark: 'My workflow' });
 try {
-  await client.cloudBrowsers.start(id, {
-    proxy: { server: 'http://your-proxy-host:8080' },
-  });
+  await client.cloudBrowsers.start(id, { proxy });
   const profile = await client.cloudBrowsers.get(id);
+  console.log({ id: profile.id, status: profile.runtime.status });
   // profile.runtime.connectUrl opens the interactive browser in an
   // authenticated browser signed in as the profile owner.
 } finally {
-  const result = await client.cloudBrowsers.stop(id);
-  // If runtime.status is 'stopping', query until 'stopped' is confirmed.
-  // See examples/cloud-browser.mjs for bounded cleanup.
+  await stopAndWait(id);
 }
 ```
 
@@ -176,6 +259,8 @@ try {
 ## Configuration, deadlines, and cancellation
 
 ```ts
+import AdsCrawl from 'adscrawl';
+
 const client = new AdsCrawl({
   apiKey: process.env.ADSCRAWL_API_KEY,
   baseURL: 'https://api.adscrawl.net',
@@ -188,6 +273,7 @@ const result = await client.markdown(
   { url: 'https://www.adscrawl.net', timeoutMs: 60_000 }, // Server task timeout.
   { timeoutMs: 75_000, signal: controller.signal }, // HTTP deadline / cancellation.
 );
+console.log(result);
 ```
 
 The API key defaults to `ADSCRAWL_API_KEY`. The API origin defaults to `ADSCRAWL_BASE_URL`, then `ADSCRAWL_API_URL`, then `https://api.adscrawl.net`. HTTP deadlines cover both the request and reading its response. Ordinary calls default to 90 seconds; `cloudBrowsers.launch()` defaults to 195 seconds to allow startup and server cleanup unless you set a client or per-call deadline. For long tasks, set an HTTP deadline greater than the server task timeout. Cancellation or a deadline does not prove remote work stopped.
@@ -195,16 +281,19 @@ The API key defaults to `ADSCRAWL_API_KEY`. The API origin defaults to `ADSCRAWL
 ## Errors
 
 ```ts
-import { AdsCrawlAPIError, AdsCrawlTimeoutError } from 'adscrawl';
+import AdsCrawl, { AdsCrawlAPIError, AdsCrawlTimeoutError } from 'adscrawl';
+
+const client = new AdsCrawl();
 
 try {
-  await client.markdown({ url: 'https://www.adscrawl.net' });
+  const markdown = await client.markdown({ url: 'https://www.adscrawl.net' });
+  console.log(markdown);
 } catch (error) {
   if (error instanceof AdsCrawlAPIError) {
     console.error(error.status, error.code, error.traceId);
     // error.body contains the service response with credentials redacted.
   } else if (error instanceof AdsCrawlTimeoutError) {
-    // Inspect existing sessions/profiles before retrying browser creation.
+    console.error('Request timed out. Inspect sessions/profiles before retrying browser creation.');
   } else {
     throw error;
   }

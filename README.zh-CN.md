@@ -14,6 +14,8 @@ npm install adscrawl
 
 在服务端环境变量中设置 `ADSCRAWL_API_KEY`：
 
+以下每段示例均包含独立的导入和客户端初始化，可分别复制到 ES module 文件或 TypeScript 项目中使用。
+
 ```ts
 import AdsCrawl from 'adscrawl';
 
@@ -31,8 +33,11 @@ console.log(markdown);
 
 ```ts
 import { writeFile } from 'node:fs/promises';
+import AdsCrawl from 'adscrawl';
 
+const client = new AdsCrawl();
 const html = await client.html({ url: 'https://www.adscrawl.net' });
+console.log(html);
 const article = await client.article({ url: 'https://www.adscrawl.net' });
 console.log(article.title, article.textContent);
 
@@ -44,6 +49,7 @@ const png = await client.screenshot({
 await writeFile('page.png', png);
 
 const { templates } = await client.spa.templates();
+console.log(templates);
 const result = await client.spa.extract({
   template: 'google-trends-explore',
   keyword: 'playwright,puppeteer',
@@ -57,9 +63,15 @@ console.log(result.data);
 
 单独安装 `playwright-core` 后：
 
+```bash
+npm install adscrawl playwright-core
+```
+
 ```ts
 import { chromium } from 'playwright-core';
+import AdsCrawl from 'adscrawl';
 
+const client = new AdsCrawl();
 const session = await client.cdp.create();
 try {
   const browser = await chromium.connectOverCDP(session.cdpBaseUrl);
@@ -81,13 +93,16 @@ try {
 ## 超时与错误
 
 ```ts
-import { AdsCrawlAPIError } from 'adscrawl';
+import AdsCrawl, { AdsCrawlAPIError } from 'adscrawl';
+
+const client = new AdsCrawl();
 
 try {
-  await client.markdown(
+  const markdown = await client.markdown(
     { url: 'https://www.adscrawl.net', timeoutMs: 60_000 },
     { timeoutMs: 75_000 },
   );
+  console.log(markdown);
 } catch (error) {
   if (error instanceof AdsCrawlAPIError) {
     console.error(error.status, error.code, error.traceId);
