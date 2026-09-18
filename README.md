@@ -25,7 +25,7 @@ import AdsCrawl from 'adscrawl';
 
 const client = new AdsCrawl();
 const markdown = await client.markdown({
-  url: 'https://example.com/article',
+  url: 'https://www.adscrawl.net',
   waitUntil: 'domcontentloaded',
 });
 console.log(markdown);
@@ -45,12 +45,12 @@ const client = new AdsCrawl();
 ```ts
 import { writeFile } from 'node:fs/promises';
 
-const html = await client.html({ url: 'https://example.com' });
-const article = await client.article({ url: 'https://example.com/article' });
+const html = await client.html({ url: 'https://www.adscrawl.net' });
+const article = await client.article({ url: 'https://www.adscrawl.net' });
 console.log(article.title, article.textContent);
 
 const png = await client.screenshot({
-  url: 'https://example.com',
+  url: 'https://www.adscrawl.net',
   viewport: { width: 1440, height: 900 },
   fullPage: true,
   waitUntil: 'load',
@@ -64,7 +64,7 @@ Pass `selector` to extract an element or capture its screenshot. Page operations
 
 ```ts
 const markdown = await client.markdown({
-  url: 'https://example.com/article',
+  url: 'https://www.adscrawl.net',
   countryCode: 'US',
   userAgentMode: 'random',
   userAgentOs: 'windows',
@@ -89,14 +89,14 @@ For your own page, specify DOM or network fields. A generic describes the expect
 
 ```ts
 const result = await client.spa.extract<{ title: string }>({
-  url: 'https://example.com',
+  url: 'https://www.adscrawl.net',
   fields: {
     title: { source: 'dom', selector: 'h1', value: 'text', required: true },
   },
 });
 console.log(result.data.title);
 
-const inspection = await client.spa.inspect({ url: 'https://example.com' });
+const inspection = await client.spa.inspect({ url: 'https://www.adscrawl.net' });
 ```
 
 Use `actions` for clicks, input, scrolling, and waits, and `waitFor` for a visible selector or text. See the [API reference](https://www.adscrawl.net/docs/browser-tasks/) for template-specific requirements.
@@ -122,7 +122,7 @@ try {
   const browser = await chromium.connectOverCDP(session.cdpBaseUrl);
   const context = browser.contexts()[0] ?? await browser.newContext();
   const page = context.pages()[0] ?? await context.newPage();
-  await page.goto('https://example.com');
+  await page.goto('https://www.adscrawl.net');
   console.log(await page.title());
 } finally {
   await client.cdp.close(session.sessionId);
@@ -185,7 +185,7 @@ const client = new AdsCrawl({
 
 const controller = new AbortController();
 const result = await client.markdown(
-  { url: 'https://example.com', timeoutMs: 60_000 }, // Server task timeout.
+  { url: 'https://www.adscrawl.net', timeoutMs: 60_000 }, // Server task timeout.
   { timeoutMs: 75_000, signal: controller.signal }, // HTTP deadline / cancellation.
 );
 ```
@@ -198,7 +198,7 @@ The API key defaults to `ADSCRAWL_API_KEY`. The API origin defaults to `ADSCRAWL
 import { AdsCrawlAPIError, AdsCrawlTimeoutError } from 'adscrawl';
 
 try {
-  await client.markdown({ url: 'https://example.com' });
+  await client.markdown({ url: 'https://www.adscrawl.net' });
 } catch (error) {
   if (error instanceof AdsCrawlAPIError) {
     console.error(error.status, error.code, error.traceId);

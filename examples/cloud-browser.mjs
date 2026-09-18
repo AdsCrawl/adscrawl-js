@@ -31,7 +31,7 @@ async function stopAndWait(id) {
 
 let id;
 try {
-  const launched = await client.cloudBrowsers.launch({ proxy, tabs: ['https://example.com'] });
+  const launched = await client.cloudBrowsers.launch({ proxy, tabs: ['https://www.adscrawl.net'] });
   id = launched.id;
   console.log({ id, status: launched.runtime.status });
   // Use the browser here. Do not log connection URLs.

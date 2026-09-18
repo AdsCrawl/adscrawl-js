@@ -8,7 +8,7 @@ try {
   const browser = await chromium.connectOverCDP(session.cdpBaseUrl);
   const context = browser.contexts()[0] ?? await browser.newContext();
   const page = context.pages()[0] ?? await context.newPage();
-  await page.goto(process.argv[2] ?? 'https://example.com');
+  await page.goto(process.argv[2] ?? 'https://www.adscrawl.net');
   console.log(await page.title());
 } finally {
   await client.cdp.close(session.sessionId);

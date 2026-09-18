@@ -4,6 +4,6 @@ import AdsCrawl from '../dist/esm/index.js';
 
 const client = new AdsCrawl();
 console.log(await client.markdown({
-  url: process.argv[2] ?? 'https://example.com',
+  url: process.argv[2] ?? 'https://www.adscrawl.net',
   waitUntil: 'domcontentloaded',
 }));

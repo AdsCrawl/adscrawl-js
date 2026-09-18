@@ -19,7 +19,7 @@ import AdsCrawl from 'adscrawl';
 
 const client = new AdsCrawl();
 const markdown = await client.markdown({
-  url: 'https://example.com/article',
+  url: 'https://www.adscrawl.net',
   waitUntil: 'domcontentloaded',
 });
 console.log(markdown);
@@ -32,12 +32,12 @@ console.log(markdown);
 ```ts
 import { writeFile } from 'node:fs/promises';
 
-const html = await client.html({ url: 'https://example.com' });
-const article = await client.article({ url: 'https://example.com/article' });
+const html = await client.html({ url: 'https://www.adscrawl.net' });
+const article = await client.article({ url: 'https://www.adscrawl.net' });
 console.log(article.title, article.textContent);
 
 const png = await client.screenshot({
-  url: 'https://example.com',
+  url: 'https://www.adscrawl.net',
   viewport: { width: 1440, height: 900 },
   fullPage: true,
 });
@@ -65,7 +65,7 @@ try {
   const browser = await chromium.connectOverCDP(session.cdpBaseUrl);
   const context = browser.contexts()[0] ?? await browser.newContext();
   const page = context.pages()[0] ?? await context.newPage();
-  await page.goto('https://example.com');
+  await page.goto('https://www.adscrawl.net');
   console.log(await page.title());
 } finally {
   await client.cdp.close(session.sessionId);
@@ -85,7 +85,7 @@ import { AdsCrawlAPIError } from 'adscrawl';
 
 try {
   await client.markdown(
-    { url: 'https://example.com', timeoutMs: 60_000 },
+    { url: 'https://www.adscrawl.net', timeoutMs: 60_000 },
     { timeoutMs: 75_000 },
   );
 } catch (error) {
