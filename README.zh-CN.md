@@ -59,6 +59,78 @@ console.log(result.data);
 
 `html()` 默认为 HTML 字符串；指定 `contentMode: 'markdown'` 返回 Markdown，指定 `'json'` 返回结构化文章。截图返回 `Uint8Array`。`selector` 可用于提取或截图单个元素。网页接口支持视口、语言、时区、Cookie、指纹和 User-Agent 设置；`countryCode` 与自定义 `proxy` 不能同时传入。
 
+## Proxy 与指纹参数：BrowserScan 截图
+
+AdsCrawl 使用真实浏览器渲染网页，可同时配置代理网络和浏览器指纹。随机指纹会生成操作系统、GPU、硬件、字体等信号相互协调的浏览器环境。该浏览器爬取示例已验证能正常访问、渲染并截图 [BrowserScan](https://www.browserscan.net/)、[Pixelscan](https://pixelscan.net/) 和 [IPhey](https://iphey.com/) 等指纹检测网站，你可以直接查看模拟浏览器的实际环境。
+
+以下完整示例访问 BrowserScan，并将 API 返回的 PNG 保存为 `browserscan.png`。只设置 `ADSCRAWL_API_KEY` 即可运行，默认使用 `GLOBAL` 托管代理。演示自定义 `proxy` 时，将 `ADSCRAWL_PROXY_SERVER` 设置为带端口的 `http://` 或 `socks5://` 代理地址；如需认证，同时设置 `ADSCRAWL_PROXY_USERNAME` 和 `ADSCRAWL_PROXY_PASSWORD`。凭证通过环境变量读取。
+
+```ts
+import { writeFile } from 'node:fs/promises';
+import AdsCrawl from 'adscrawl';
+
+const client = new AdsCrawl();
+const server = process.env.ADSCRAWL_PROXY_SERVER;
+const username = process.env.ADSCRAWL_PROXY_USERNAME;
+const password = process.env.ADSCRAWL_PROXY_PASSWORD;
+if (Boolean(username) !== Boolean(password)) {
+  throw new Error('Set both proxy username and password, or neither.');
+}
+if (!server && (username || password)) {
+  throw new Error('Set ADSCRAWL_PROXY_SERVER when supplying proxy credentials.');
+}
+const routing = server
+  ? { proxy: username && password ? { server, username, password } : { server } }
+  : { countryCode: 'GLOBAL' };
+
+const png = await client.screenshot({
+  url: 'https://www.browserscan.net/',
+  ...routing,
+  viewport: { width: 1440, height: 900 },
+  fullPage: true,
+  waitUntil: 'networkidle',
+  timeoutMs: 60_000,
+  userAgentMode: 'random',
+  userAgentOs: 'windows',
+  fingerprint: {
+    webRtc: 'forward',
+    webGl: 'random',
+    webGpu: 'random',
+    webGlImage: 'random',
+    canvas: 'random',
+    audioContext: 'random',
+    clientRects: 'random',
+    speechVoices: 'random',
+    fonts: 'random',
+    hardware: 'random',
+    doNotTrack: 'random',
+  },
+}, { timeoutMs: 75_000 });
+
+const output = 'browserscan.png';
+await writeFile(output, png);
+console.log(`Saved fingerprint-check screenshot to ${output}`);
+```
+
+`webRtc: 'forward'` 使用代理出口地址；`random` 生成协调的指纹配置。示例不固定语言和时区，避免指定与实际代理出口不一致的地区。自定义 `proxy` 与托管代理 `countryCode` 不能同时传入。
+
+在本仓库中，设置 API key 后运行：
+
+```bash
+npm ci
+npm run build
+node examples/fingerprint.mjs
+```
+
+也可对另外两个检测网站保存截图：
+
+```bash
+node examples/fingerprint.mjs https://pixelscan.net/ pixelscan.png
+node examples/fingerprint.mjs https://iphey.com/ iphey.png
+```
+
+这个演示展示了真实浏览器访问指纹检测网站并渲染截图的能力。打开返回的 PNG，可以直接查看模拟浏览器的指纹环境。部分网站需要点击才会启动完整扫描，可使用 CDP 会话完成交互。这里的“通过”指正常访问并渲染页面，具体指纹评分以网站显示为准。
+
 ## Playwright 远程浏览器
 
 单独安装 `playwright-core` 后：

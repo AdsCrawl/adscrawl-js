@@ -94,6 +94,78 @@ const markdown = await client.markdown({
 console.log(markdown);
 ```
 
+## Proxy and fingerprint settings: BrowserScan screenshot
+
+AdsCrawl renders pages in a real browser with configurable proxy routing and browser fingerprints. Randomized settings are generated as a coherent profile across the operating system, GPU, hardware, fonts, and related signals. This browser workflow has been verified to access and render [BrowserScan](https://www.browserscan.net/), [Pixelscan](https://pixelscan.net/), and [IPhey](https://iphey.com/) and return page screenshots, so you can inspect the simulated browser environment yourself.
+
+This complete example opens BrowserScan and saves the returned PNG as `browserscan.png`. It works with `ADSCRAWL_API_KEY` and managed `GLOBAL` routing by default. To demonstrate your own `proxy`, set `ADSCRAWL_PROXY_SERVER` to an `http://` or `socks5://` proxy URL with an explicit port; optionally set both `ADSCRAWL_PROXY_USERNAME` and `ADSCRAWL_PROXY_PASSWORD`. Credentials stay in environment variables.
+
+```ts
+import { writeFile } from 'node:fs/promises';
+import AdsCrawl from 'adscrawl';
+
+const client = new AdsCrawl();
+const server = process.env.ADSCRAWL_PROXY_SERVER;
+const username = process.env.ADSCRAWL_PROXY_USERNAME;
+const password = process.env.ADSCRAWL_PROXY_PASSWORD;
+if (Boolean(username) !== Boolean(password)) {
+  throw new Error('Set both proxy username and password, or neither.');
+}
+if (!server && (username || password)) {
+  throw new Error('Set ADSCRAWL_PROXY_SERVER when supplying proxy credentials.');
+}
+const routing = server
+  ? { proxy: username && password ? { server, username, password } : { server } }
+  : { countryCode: 'GLOBAL' };
+
+const png = await client.screenshot({
+  url: 'https://www.browserscan.net/',
+  ...routing,
+  viewport: { width: 1440, height: 900 },
+  fullPage: true,
+  waitUntil: 'networkidle',
+  timeoutMs: 60_000,
+  userAgentMode: 'random',
+  userAgentOs: 'windows',
+  fingerprint: {
+    webRtc: 'forward',
+    webGl: 'random',
+    webGpu: 'random',
+    webGlImage: 'random',
+    canvas: 'random',
+    audioContext: 'random',
+    clientRects: 'random',
+    speechVoices: 'random',
+    fonts: 'random',
+    hardware: 'random',
+    doNotTrack: 'random',
+  },
+}, { timeoutMs: 75_000 });
+
+const output = 'browserscan.png';
+await writeFile(output, png);
+console.log(`Saved fingerprint-check screenshot to ${output}`);
+```
+
+`webRtc: 'forward'` uses the proxy exit address. `random` selects fingerprint settings; it does not blindly randomize each signal independently. Leave locale and timezone unset in this example instead of hardcoding a region that may differ from your proxy. Custom `proxy` and managed `countryCode` cannot be supplied together.
+
+From this repository, run the same demo after setting your API key:
+
+```bash
+npm ci
+npm run build
+node examples/fingerprint.mjs
+```
+
+You can also capture the other diagnostic sites:
+
+```bash
+node examples/fingerprint.mjs https://pixelscan.net/ pixelscan.png
+node examples/fingerprint.mjs https://iphey.com/ iphey.png
+```
+
+The demo shows real-browser access and screenshot rendering on fingerprint-checking sites. Open the saved PNG to inspect the simulated browser environment. Some sites require a click to start their full scan; use a CDP session when interaction is needed. Successful access and rendering are separate from the fingerprint score shown by the site.
+
 ## Structured extraction
 
 List available templates and their parameters:
