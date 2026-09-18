@@ -19,6 +19,16 @@ See [npm's granular token instructions](https://docs.npmjs.com/creating-and-view
 
 Alternatively, bootstrap locally with `npm login`, `npm run check`, `npm run test:package`, and `npm publish --access public`, then configure Trusted Publisher. Complete interactive login and 2FA yourself.
 
+### Troubleshooting authentication
+
+If publishing fails with `ENEEDAUTH`, inspect the **Publish to npm** step:
+
+- **NPM_TOKEN is unavailable**: check the exact secret name and repository. Use **Repository secrets** under **Secrets and variables → Actions**, not Actions **Variables**. This job does not use a GitHub environment, so environment secrets are not available. After saving the secret, start a new run from `main`.
+- **NPM_TOKEN could not authenticate**: replace the secret with the complete, valid npm token value. Check the token has not expired or been revoked.
+- Authentication succeeds but publishing is denied: check the token has **Read and write (publish and stage)** permission and **Bypass 2FA** enabled, as described above.
+
+Use **Run workflow** after workflow updates. **Re-run jobs** runs the original commit and will not pick up updated workflow code. Do not run `npm adduser` inside CI; supply the token or configure Trusted Publisher instead.
+
 ## Later releases: npm Trusted Publisher
 
 Once the package exists, open its npm **Settings → Trusted Publisher**, choose **GitHub Actions**, and enter:
