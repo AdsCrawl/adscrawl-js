@@ -12,6 +12,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: NPM_TOKEN
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
@@ -45,7 +46,7 @@ jobs:
           if [ -n "$NODE_AUTH_TOKEN" ]; then
             echo "NPM_TOKEN is available. Checking npm authentication."
             if ! npm whoami --registry=https://registry.npmjs.org/; then
-              echo "::error::NPM_TOKEN could not authenticate. Replace the repository Actions secret with a valid npm granular access token."
+              echo "::error::NPM_TOKEN could not authenticate. Replace the Actions secret with a valid npm granular access token."
               exit 1
             fi
           else
@@ -55,7 +56,7 @@ jobs:
           const { name } = JSON.parse(readFileSync('package.json', 'utf8'));
           const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(name)}`);
           if (response.status === 404) {
-            console.error('::error::First publication requires NPM_TOKEN. Add it under this repository Settings > Secrets and variables > Actions > Repository secrets, then start a new workflow run. Actions variables and environment secrets are not read by this job.');
+            console.error('::error::First publication requires NPM_TOKEN. Add an NPM_TOKEN secret to the NPM_TOKEN environment or Repository secrets, then start a new workflow run. Actions variables are not secrets.');
             process.exit(1);
           }
           if (!response.ok) throw new Error(`npm registry check failed: HTTP ${response.status}`);

@@ -10,10 +10,10 @@ Since `adscrawl` does not exist on npm yet, bootstrap the first release with a t
 
 1. Sign in to the npm account that should own `adscrawl` and complete email verification and npm's required authentication setup.
 2. In npm **Access Tokens → Generate New Token**, create a short-lived granular token. Enable **Bypass two-factor authentication**, and set **Packages and scopes → Permissions** to **Read and write (publish and stage)**. For the new, unscoped package, select **All Packages**; the package cannot be selected individually before it exists. Organization permissions are not required.
-3. In [GitHub repository Actions secrets](https://github.com/AdsCrawl/adscrawl-js/settings/secrets/actions), choose **New repository secret**, name it `NPM_TOKEN`, and paste the token as its value. Never paste it into code, issues, or chat.
+3. In GitHub **Settings → Environments → NPM_TOKEN**, add an environment secret named `NPM_TOKEN` and paste the token as its value. The publish job uses this environment. A [repository Actions secret](https://github.com/AdsCrawl/adscrawl-js/settings/secrets/actions) with the same name also works when no environment secret overrides it. Never paste it into code, issues, or chat.
 4. Open [Publish to npm](https://github.com/AdsCrawl/adscrawl-js/actions/workflows/publish.yml), select **Run workflow**, choose `main`, then run it. This publishes the version in `package.json`, currently `0.1.0`.
 5. Check the workflow is green and `npm view adscrawl version` returns `0.1.0`. A published version cannot be overwritten; bump the version before the next release.
-6. Configure Trusted Publisher below, then delete the GitHub `NPM_TOKEN` secret and revoke the temporary npm token.
+6. Configure Trusted Publisher below, then delete the GitHub `NPM_TOKEN` secret from the environment and repository, if present and revoke the temporary npm token.
 
 See [npm's granular token instructions](https://docs.npmjs.com/creating-and-viewing-access-tokens/). The token is available only to the publish step, not dependency installation or tests. Publishing makes the version publicly installable.
 
@@ -23,7 +23,7 @@ Alternatively, bootstrap locally with `npm login`, `npm run check`, `npm run tes
 
 If publishing fails with `ENEEDAUTH`, inspect the **Publish to npm** step:
 
-- **NPM_TOKEN is unavailable**: check the exact secret name and repository. Use **Repository secrets** under **Secrets and variables → Actions**, not Actions **Variables**. This job does not use a GitHub environment, so environment secrets are not available. After saving the secret, start a new run from `main`.
+- **NPM_TOKEN is unavailable**: check the exact secret name and repository. Use the `NPM_TOKEN` secret inside the `NPM_TOKEN` environment, or **Repository secrets** under **Secrets and variables → Actions**. Actions **Variables** and secrets in other environments are not available to this job. After saving the secret, start a new run from `main`.
 - **NPM_TOKEN could not authenticate**: replace the secret with the complete, valid npm token value. Check the token has not expired or been revoked.
 - Authentication succeeds but publishing is denied: check the token has **Read and write (publish and stage)** permission and **Bypass 2FA** enabled, as described above.
 
@@ -38,7 +38,7 @@ Once the package exists, open its npm **Settings → Trusted Publisher**, choose
 | Organization or user | `AdsCrawl` |
 | Repository | `adscrawl-js` |
 | Workflow filename | `publish.yml` |
-| Environment name | Leave empty |
+| Environment name | `NPM_TOKEN` |
 | Allowed actions | Enable direct `npm publish` |
 
 Direct publishing must be enabled: new publisher connections otherwise permit staged publishing only. See [npm's official Trusted Publisher instructions](https://docs.npmjs.com/trusted-publishers/).
