@@ -15,7 +15,7 @@ try {
   const [pack] = JSON.parse(output.slice(output.indexOf('[\n')));
   const files = pack.files.map((file) => file.path);
   for (const file of files) {
-    assert.ok(file.startsWith('dist/') || ['package.json', 'README.md', 'README.zh-CN.md', 'LICENSE'].includes(file), `Unexpected packed file: ${file}`);
+    assert.ok(file.startsWith('dist/') || ['package.json', 'README.md', 'README.zh-CN.md', 'LICENSE', 'assets/adscrawl-logo.svg'].includes(file), `Unexpected packed file: ${file}`);
   }
   assert.ok(files.includes('dist/esm/index.d.ts'));
   assert.ok(files.includes('dist/cjs/index.d.ts'));

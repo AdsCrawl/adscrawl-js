@@ -1,4 +1,12 @@
-# AdsCrawl JavaScript / TypeScript SDK
+<p align="center">
+  <a href="https://www.adscrawl.net/?utm_source=github&utm_medium=sdk&utm_campaign=adscrawl-js">
+    <img src="./assets/adscrawl-logo.svg" alt="AdsCrawl" width="360" />
+  </a>
+</p>
+
+<p align="center"><strong>真实浏览器 · 结构化提取 · 截图与自动化</strong></p>
+
+<h1 align="center">JavaScript / TypeScript SDK</h1>
 
 用几行代码把网页转换为 HTML、Markdown、结构化数据或 PNG 截图。需要点击、输入和登录流程时，可连接远程浏览器，使用 Playwright 或 Puppeteer。
 

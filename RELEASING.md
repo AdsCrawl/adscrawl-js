@@ -5,7 +5,7 @@ Target repository: `AdsCrawl/adscrawl-js`. Target npm package: `adscrawl`.
 ## First release
 
 1. Create a public GitHub repository named `adscrawl-js` under `AdsCrawl`, without generated files. Push this repository's `main` branch. If you change the owner/name, update `package.json` and the npm trusted-publisher configuration together.
-2. Run `npm ci`, `npm run check`, and `npm pack --dry-run`. The package includes only compiled ESM/CommonJS, declarations, README files, and the license.
+2. Run `npm ci`, `npm run check`, and `npm pack --dry-run`. The package includes compiled ESM/CommonJS, declarations, README files, the SVG logo, and the license.
 3. Sign in to the npm account that should own the package: `npm login`, then verify with `npm whoami`. Complete npm's authentication/2FA prompts yourself; never paste credentials into source files or chat.
 4. Confirm `npm view adscrawl version` returns E404. If another package has appeared, choose a new name before publishing.
 5. Publish `0.1.0` from the repository root: `npm publish --access public`. The `prepack` script builds both module formats.

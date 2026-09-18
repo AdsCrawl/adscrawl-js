@@ -1,4 +1,12 @@
-# AdsCrawl JavaScript / TypeScript SDK
+<p align="center">
+  <a href="https://www.adscrawl.net/?utm_source=github&utm_medium=sdk&utm_campaign=adscrawl-js">
+    <img src="./assets/adscrawl-logo.svg" alt="AdsCrawl" width="360" />
+  </a>
+</p>
+
+<p align="center"><strong>Real browsers. Structured extraction. Screenshots and automation.</strong></p>
+
+<h1 align="center">JavaScript / TypeScript SDK</h1>
 
 Turn a URL into rendered HTML, readable Markdown, structured data, or a PNG screenshot. When your workflow needs interaction, connect a remote browser with Playwright or Puppeteer.
 
